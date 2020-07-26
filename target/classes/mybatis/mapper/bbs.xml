@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+  <!-- 파일명과 동일하게 -->
+<mapper namespace="bbs">
+	
+	<!-- 게시글 리스트 목록 SELECT문 -->
+	<!-- 1. BbsVO안에 List구조의 CommVO를  가지는 "복합적인 결과(=resultMap)"을 얻고-->
+	<!-- 2. 페이징을 위해 Map구조로 begin, end 페이지값을 받고, rownum으로 해결한다. -->
+	<select id="list" parameterType="java.util.Map"
+					  resultMap="rm_c_list">
+		SELECT * FROM (
+		 SELECT rownum r_num, a.* FROM (
+		 	SELECT * FROM bbs_t
+		 	WHERE status = 0
+		 	ORDER BY b_idx DESC
+		 ) a
+		) WHERE r_num BETWEEN #{begin} AND #{end}
+	</select>
+	
+	<resultMap type="mybatis.vo.BbsVO" id="rm_c_list">
+		<id property="b_idx" column="b_idx"/>
+		<collection property="c_list"
+					ofType="mybatis.vo.CommVO"
+					select="commList"
+					column="b_idx">
+		</collection>
+	</resultMap>
+	
+	<!-- 댓글 리스트 목록 SELECT문 : b_idx를 통해 특정 원글의 댓글을 조회한다. -->
+	<select id="commList" resultType="mybatis.vo.CommVO"
+						  parameterType="String">
+		SELECT * FROM comment_t
+		WHERE b_idx = #{b_idx}					  
+	</select>
+	
+	<!-- 게시글 등록 INSERT문 -->
+	<insert id="insertBoard" parameterType="mybatis.vo.BbsVO">
+		INSERT INTO bbs_t (b_idx, title, content, writer, reg_date, cnt, ip, filename, status)
+		VALUES(b_idx_seq.NEXTVAL, #{title},#{content},#{writer},sysdate,#{cnt},#{ip},#{filename},#{status})
+	</insert>
+</mapper>
